@@ -3,18 +3,86 @@
 
 ## Loading and preprocessing the data
 
+```{r}
+datRaw <- read.table('activity.csv', header=TRUE, sep=',', colClasses=c('numeric', 'Date', 'integer'))
+
+```
 
 
 ## What is mean total number of steps taken per day?
 
+```{r, fig.cap='Histogram of number of steps per day'}
+library(ggplot2)
+myTbyDay <- aggregate(steps~date, data=datRaw, FUN='sum', na.action='na.omit')
+ggplot(myTbyDay, aes(x=steps)) +
+    geom_histogram(binwidth=1000)
+```
 
+```{r}
+mean(myTbyDay$steps)
+median(myTbyDay$steps)
+```
+
+The mean number of steps per day is `r format(mean(myTbyDay$steps), nsmall=2)`.
+The median number of steps per day is `r format(median(myTbyDay$steps), nsmall=2)`.
 
 ## What is the average daily activity pattern?
 
+```{r, fig.cap='Time series of average number of steps by 5 minutres interval'}
+myTbyMin <- aggregate(steps~interval, data=datRaw, FUN='mean', na.action='na.omit')
 
+ggplot(myTbyMin, aes(x=interval, y=steps)) +
+    geom_line()
+myTbyMin$interval[which.max(myTbyMin$steps)]
+```
+
+The 5 minute interval with maximum average number of steps is interval `r myTbyMin$interval[which.max(myTbyMin$steps)]`.
 
 ## Imputing missing values
 
+```{r}
+writeLines('Simple :')
+sum(is.na(datRaw$steps))
+writeLines('More subtle :')
+sum(!complete.cases(datRaw))
+```
+
+There are `r sum(is.na(datRaw$steps))` missing values in the dataset.
+
+We fill missing values with the mean for the 5 minute interval :
+
+```{r}
+datComplete <- datRaw
+indexOfMissingData <- is.na(datRaw$steps)
+datComplete$steps[indexOfMissingData] <- rep(myTbyMin$steps, 61)[indexOfMissingData]
+```
+
+Histogram and mean / median of the data set with missing values filled in :
+
+```{r, fig.cap='Histogram with missing data filled in'}
+myTbyDayComplete <- aggregate(steps~date, data=datComplete, FUN='sum', na.action='na.omit')
+ggplot(myTbyDayComplete, aes(x=steps)) +
+    geom_histogram(binwidth=1000)
+
+mean(myTbyDayComplete$steps)
+median(myTbyDayComplete$steps)
+```
+
+The effect of filling in the missing values has no effect on the global mean, but has an impact on the variance of data (reduced variance, with a more pronounced central pic on the histogram).
+The median is now equal to the mean.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r, fig.cap='Activity pattern for weekdays and weekends'}
+datComplete <- within(datComplete, {
+                      dayType <- (weekdays(date) %in% c('samedi', 'dimanche')) +1
+                      dayType <- factor(dayType, labels=c('weekday', 'weekend'))
+})
+
+myTbyMinAndDayType <- aggregate(steps~interval+dayType, data=datComplete, FUN='mean')
+
+ggplot(myTbyMinAndDayType, aes(x=interval, y=steps)) +
+    geom_line() +
+    facet_grid(dayType ~ .)
+```

@@ -1,0 +1,67 @@
+<h1 id="reproducible-research-peer-assessment-1">Reproducible Research: Peer Assessment 1</h1>
+<h2 id="loading-and-preprocessing-the-data">Loading and preprocessing the data</h2>
+<pre class="sourceCode r"><code class="sourceCode r">datRaw &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="st">&quot;activity.csv&quot;</span>, <span class="dt">header =</span> <span class="ot">TRUE</span>, <span class="dt">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="dt">colClasses =</span> <span class="kw">c</span>(<span class="st">&quot;numeric&quot;</span>, 
+    <span class="st">&quot;Date&quot;</span>, <span class="st">&quot;integer&quot;</span>))</code></pre>
+<h2 id="what-is-mean-total-number-of-steps-taken-per-day">What is mean total number of steps taken per day?</h2>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
+myTbyDay &lt;-<span class="st"> </span><span class="kw">aggregate</span>(steps ~<span class="st"> </span>date, <span class="dt">data =</span> datRaw, <span class="dt">FUN =</span> <span class="st">&quot;sum&quot;</span>, <span class="dt">na.action =</span> <span class="st">&quot;na.omit&quot;</span>)
+<span class="kw">ggplot</span>(myTbyDay, <span class="kw">aes</span>(<span class="dt">x =</span> steps)) +<span class="st"> </span><span class="kw">geom_histogram</span>(<span class="dt">binwidth =</span> <span class="dv">1000</span>)</code></pre>
+<div class="figure">
+<img src="figure/unnamed-chunk-2.png" alt="Histogram of number of steps per day" /><p class="caption">Histogram of number of steps per day</p>
+</div>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">mean</span>(myTbyDay$steps)</code></pre>
+<pre><code>## [1] 10766</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">median</span>(myTbyDay$steps)</code></pre>
+<pre><code>## [1] 10765</code></pre>
+<p>The mean number of steps per day is 10766.19. The median number of steps per day is 10765.00.</p>
+<h2 id="what-is-the-average-daily-activity-pattern">What is the average daily activity pattern?</h2>
+<pre class="sourceCode r"><code class="sourceCode r">myTbyMin &lt;-<span class="st"> </span><span class="kw">aggregate</span>(steps ~<span class="st"> </span>interval, <span class="dt">data =</span> datRaw, <span class="dt">FUN =</span> <span class="st">&quot;mean&quot;</span>, <span class="dt">na.action =</span> <span class="st">&quot;na.omit&quot;</span>)
+
+<span class="kw">ggplot</span>(myTbyMin, <span class="kw">aes</span>(<span class="dt">x =</span> interval, <span class="dt">y =</span> steps)) +<span class="st"> </span><span class="kw">geom_line</span>()</code></pre>
+<div class="figure">
+<img src="figure/unnamed-chunk-4.png" alt="Time series of average number of steps by 5 minutres interval" /><p class="caption">Time series of average number of steps by 5 minutres interval</p>
+</div>
+<pre class="sourceCode r"><code class="sourceCode r">myTbyMin$interval[<span class="kw">which.max</span>(myTbyMin$steps)]</code></pre>
+<pre><code>## [1] 835</code></pre>
+<p>The 5 minute interval with maximum average number of steps is interval 835.</p>
+<h2 id="imputing-missing-values">Imputing missing values</h2>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">writeLines</span>(<span class="st">&quot;Simple :&quot;</span>)</code></pre>
+<pre><code>## Simple :</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(<span class="kw">is.na</span>(datRaw$steps))</code></pre>
+<pre><code>## [1] 2304</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">writeLines</span>(<span class="st">&quot;More subtle :&quot;</span>)</code></pre>
+<pre><code>## More subtle :</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(!<span class="kw">complete.cases</span>(datRaw))</code></pre>
+<pre><code>## [1] 2304</code></pre>
+<p>There are 2304 missing values in the dataset.</p>
+<p>We fill missing values with the mean for the 5 minute interval :</p>
+<pre class="sourceCode r"><code class="sourceCode r">datComplete &lt;-<span class="st"> </span>datRaw
+indexOfMissingData &lt;-<span class="st"> </span><span class="kw">is.na</span>(datRaw$steps)
+datComplete$steps[indexOfMissingData] &lt;-<span class="st"> </span><span class="kw">rep</span>(myTbyMin$steps, <span class="dv">61</span>)[indexOfMissingData]</code></pre>
+<p>Histogram and mean / median of the data set with missing values filled in :</p>
+<pre class="sourceCode r"><code class="sourceCode r">myTbyDayComplete &lt;-<span class="st"> </span><span class="kw">aggregate</span>(steps ~<span class="st"> </span>date, <span class="dt">data =</span> datComplete, <span class="dt">FUN =</span> <span class="st">&quot;sum&quot;</span>, 
+    <span class="dt">na.action =</span> <span class="st">&quot;na.omit&quot;</span>)
+<span class="kw">ggplot</span>(myTbyDayComplete, <span class="kw">aes</span>(<span class="dt">x =</span> steps)) +<span class="st"> </span><span class="kw">geom_histogram</span>(<span class="dt">binwidth =</span> <span class="dv">1000</span>)</code></pre>
+<div class="figure">
+<img src="figure/unnamed-chunk-7.png" alt="Histogram with missing data filled in" /><p class="caption">Histogram with missing data filled in</p>
+</div>
+<pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw">mean</span>(myTbyDayComplete$steps)</code></pre>
+<pre><code>## [1] 10766</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">median</span>(myTbyDayComplete$steps)</code></pre>
+<pre><code>## [1] 10766</code></pre>
+<p>The effect of filling in the missing values has no effect on the global mean, but has an impact on the variance of data (reduced variance, with a more pronounced central pic on the histogram). The median is now equal to the mean.</p>
+<h2 id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends">Are there differences in activity patterns between weekdays and weekends?</h2>
+<pre class="sourceCode r"><code class="sourceCode r">datComplete &lt;-<span class="st"> </span><span class="kw">within</span>(datComplete, {
+    dayType &lt;-<span class="st"> </span>(<span class="kw">weekdays</span>(date) %in%<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;samedi&quot;</span>, <span class="st">&quot;dimanche&quot;</span>)) +<span class="st"> </span><span class="dv">1</span>
+    dayType &lt;-<span class="st"> </span><span class="kw">factor</span>(dayType, <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;weekday&quot;</span>, <span class="st">&quot;weekend&quot;</span>))
+})
+
+myTbyMinAndDayType &lt;-<span class="st"> </span><span class="kw">aggregate</span>(steps ~<span class="st"> </span>interval +<span class="st"> </span>dayType, <span class="dt">data =</span> datComplete, 
+    <span class="dt">FUN =</span> <span class="st">&quot;mean&quot;</span>)
+
+<span class="kw">ggplot</span>(myTbyMinAndDayType, <span class="kw">aes</span>(<span class="dt">x =</span> interval, <span class="dt">y =</span> steps)) +<span class="st"> </span><span class="kw">geom_line</span>() +<span class="st"> </span><span class="kw">facet_grid</span>(dayType ~<span class="st"> </span>
+<span class="st">    </span>.)</code></pre>
+<div class="figure">
+<img src="figure/unnamed-chunk-8.png" alt="Activity pattern for weekdays and weekends" /><p class="caption">Activity pattern for weekdays and weekends</p>
+</div>
